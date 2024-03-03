@@ -79,12 +79,12 @@ void setup() {
 void controlClimate(float currentTemperature) {
 
   if(currentTemperature != 0){
-    if (currentTemperature > maxTemp) {
+    if (currentTemperature >= maxTemp) {
       // Activate ventilation system
       digitalWrite(RELAY_PIN_VENTILATION, HIGH);
       digitalWrite(RELAY_PIN_HEATER, LOW);
       Serial.println("Ventilation ON");
-    } else if (currentTemperature < minTemp) {
+    } else if (currentTemperature <= minTemp) {
       // Activate both ventilation and heater
       digitalWrite(RELAY_PIN_VENTILATION, HIGH);
       digitalWrite(RELAY_PIN_HEATER, HIGH);
