@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <Firebase_ESP_Client.h>
-#include <DHT.h>
 
 // Provide the token generation process info.
 #include "addons/TokenHelper.h"
@@ -20,30 +19,28 @@
 
 
 // Define Firebase Data object
+FirebaseData stream;
 FirebaseData fbdo;
-
 FirebaseAuth auth;
 FirebaseConfig config;
 
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
 
+const int zharyqPins[15] = {32, 33, 25, 26, 27, 14, 13, 23, 22, 21, 19, 18, 17, 16, 4};
+
+
 void setup() {
   Serial.begin(115200);
-
-  pinMode(RELAY_PIN_VENTILATION, OUTPUT);
-  pinMode(RELAY_PIN_HEATER, OUTPUT);
-  // Ensure relays are OFF initially
-  digitalWrite(RELAY_PIN_VENTILATION, LOW);
-  digitalWrite(RELAY_PIN_HEATER, LOW);
-
-  dht.begin();
-
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(300);
+  }
+  for (int i = 0; i < 15; i++) {
+    pinMode(zharyqPins[i], OUTPUT);
+    digitalWrite(zharyqPins[i], LOW);
   }
   Serial.println();
   Serial.print("Connected with IP: ");
@@ -63,15 +60,12 @@ void setup() {
 
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+
+  if (!Firebase.RTDB.beginStream(&stream, "/esp3"))
+    Serial.printf("stream begin error, %s\n\n", stream.errorReason().c_str());
+  Firebase.RTDB.setStreamCallback(&stream, streamCallback, streamTimeoutCallback);
 }
 
-Firebase.setStreamCallback(fbdo, streamCallback, streamTimeoutCallback);
-
-if (!Firebase.beginStream(fbdo, "/test/data"))
-{
-  // Could not begin stream connection, then print out the error detail
-  Serial.println(fbdo.errorReason());
-}
 
 void streamTimeoutCallback(bool timeout)
 {
@@ -81,7 +75,7 @@ void streamTimeoutCallback(bool timeout)
   }  
 }
 
-void streamCallback(StreamData data)
+void streamCallback(FirebaseStream data)
 {
 
   // Print out all information
