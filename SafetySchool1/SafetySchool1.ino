@@ -69,41 +69,74 @@ void setup() {
 
 void streamTimeoutCallback(bool timeout)
 {
-  if(timeout){
+  if (timeout) {
     // Stream timeout occurred
     Serial.println("Stream timeout, resume streaming...");
-  }  
+  }
 }
 
 void streamCallback(FirebaseStream data)
 {
-
-  // Print out all information
-
-  Serial.println("Stream Data...");
+  Serial.println("Получены данные из потока...");
   Serial.println(data.streamPath());
   Serial.println(data.dataPath());
   Serial.println(data.dataType());
 
-  // Print out the value
-  // Stream data can be many types which can be determined from function dataType
+  // Обработка для zharyq1 до zharyq15
+  if (data.dataPath().endsWith("/zharyq1")) {
+    digitalWrite(zharyqPins[0], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq1");
+  } else if (data.dataPath().endsWith("/zharyq2")) {
+    digitalWrite(zharyqPins[1], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq2");
+  } else if (data.dataPath().endsWith("/zharyq3")) {
+    digitalWrite(zharyqPins[2], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq3");
+  } else if (data.dataPath().endsWith("/zharyq4")) {
+    digitalWrite(zharyqPins[3], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq4");
+  } else if (data.dataPath().endsWith("/zharyq5")) {
+    digitalWrite(zharyqPins[4], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq5");
+  } else if (data.dataPath().endsWith("/zharyq6")) {
+    digitalWrite(zharyqPins[5], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq6");
+  } else if (data.dataPath().endsWith("/zharyq7")) {
+    digitalWrite(zharyqPins[6], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq7");
+  } else if (data.dataPath().endsWith("/zharyq8")) {
+    digitalWrite(zharyqPins[7], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq8");
+  } else if (data.dataPath().endsWith("/zharyq9")) {
+    digitalWrite(zharyqPins[8], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq9");
+  } else if (data.dataPath().endsWith("/zharyq10")) {
+    digitalWrite(zharyqPins[9], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq10");
+  } else if (data.dataPath().endsWith("/zharyq11")) {
+    digitalWrite(zharyqPins[10], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq11");
+  } else if (data.dataPath().endsWith("/zharyq12")) {
+    digitalWrite(zharyqPins[11], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq12");
+  } else if (data.dataPath().endsWith("/zharyq13")) {
+    digitalWrite(zharyqPins[12], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq13");
+  } else if (data.dataPath().endsWith("/zharyq14")) {
+    digitalWrite(zharyqPins[13], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq14");
+  } else if (data.dataPath().endsWith("/zharyq15")) {
+    digitalWrite(zharyqPins[14], data.intData() != 0 ? HIGH : LOW);
+    Serial.println("/zharyq15");
+  }
 
-  if (data.dataTypeEnum() == firebase_rtdb_data_type_integer)
-      Serial.println(data.to<int>());
-  else if (data.dataTypeEnum() == firebase_rtdb_data_type_float)
-      Serial.println(data.to<float>(), 5);
-  else if (data.dataTypeEnum() == firebase_rtdb_data_type_double)
-      printf("%.9lf\n", data.to<double>());
-  else if (data.dataTypeEnum() == firebase_rtdb_data_type_boolean)
-      Serial.println(data.to<bool>()? "true" : "false");
-  else if (data.dataTypeEnum() == firebase_rtdb_data_type_string)
-      Serial.println(data.to<String>());
+  // Выводим значение
+  Serial.println(data.intData());
 }
-
 void loop() {
 
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
-    
+
   }
 }
