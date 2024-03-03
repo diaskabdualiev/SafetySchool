@@ -18,16 +18,20 @@
 // Insert RTDB URL
 #define DATABASE_URL "https://safetyschool-5bb16-default-rtdb.asia-southeast1.firebasedatabase.app" 
 
+// DHT Sensor configuration
+#define DHTPIN 25 // Adjust according to your ESP32 pin layout
+#define DHTTYPE DHT11 // DHT 11
+DHT dht(DHTPIN, DHTTYPE);
+
+// Relay pins
+#define RELAY_PIN_VENTILATION 26 // Change to your ventilation relay pin
+#define RELAY_PIN_HEATER 27 // Change to your heater relay pin
+
 // Define Firebase Data object
 FirebaseData fbdo;
 
 FirebaseAuth auth;
 FirebaseConfig config;
-
-// DHT Sensor configuration
-#define DHTPIN 25        // What digital pin the DHT22 is connected to
-#define DHTTYPE DHT11      // DHT 11
-DHT dht(DHTPIN, DHTTYPE);
 
 unsigned long sendDataPrevMillis = 0;
 
@@ -36,7 +40,12 @@ bool signupOK = false;
 void setup() {
   Serial.begin(115200);
   
-  // Initialize DHT sensor
+  pinMode(RELAY_PIN_VENTILATION, OUTPUT);
+  pinMode(RELAY_PIN_HEATER, OUTPUT);
+  // Ensure relays are OFF initially
+  digitalWrite(RELAY_PIN_VENTILATION, LOW);
+  digitalWrite(RELAY_PIN_HEATER, LOW);
+
   dht.begin();
   
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -50,13 +59,9 @@ void setup() {
   Serial.println(WiFi.localIP());
   Serial.println();
 
-  // Assign the api key (required)
   config.api_key = API_KEY;
-
-  // Assign the RTDB URL (required)
   config.database_url = DATABASE_URL;
 
-  // Sign up
   if (Firebase.signUp(&config, &auth, "", "")) {
     Serial.println("ok");
     signupOK = true;
@@ -65,41 +70,65 @@ void setup() {
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
-  // Assign the callback function for the long running token generation task
-  config.token_status_callback = tokenStatusCallback; // See addons/TokenHelper.h
-
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+}
+
+void controlClimate(float currentTemperature) {
+  float maxTemp, minTemp;
+  if (Firebase.RTDB.getFloat(&fbdo, "/esp4/cab1/maxtemp")) {
+    maxTemp = fbdo.floatData();
+  } else {
+    Serial.println("Failed to read max temperature threshold");
+    return;
+  }
+
+  if (Firebase.RTDB.getFloat(&fbdo, "/esp4/cab1/mintemp")) {
+    minTemp = fbdo.floatData();
+  } else {
+    Serial.println("Failed to read min temperature threshold");
+    return;
+  }
+
+  if (currentTemperature > maxTemp) {
+    // Activate ventilation system
+    digitalWrite(RELAY_PIN_VENTILATION, HIGH);
+    Serial.println("Ventilation ON");
+  } else if (currentTemperature < minTemp) {
+    // Activate both ventilation and heater
+    digitalWrite(RELAY_PIN_VENTILATION, HIGH);
+    digitalWrite(RELAY_PIN_HEATER, HIGH);
+    Serial.println("Heater and Ventilation ON");
+  } else {
+    // Deactivate both systems
+    digitalWrite(RELAY_PIN_VENTILATION, LOW);
+    digitalWrite(RELAY_PIN_HEATER, LOW);
+    Serial.println("Heater and Ventilation OFF");
+  }
 }
 
 void loop() {
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
     
-    // Reading temperature or humidity takes about 250 milliseconds!
     float h = dht.readHumidity();
-    // Read temperature as Celsius (the default)
     float t = dht.readTemperature();
     
-    // Check if any reads failed and exit early (to try again).
     if (isnan(h) || isnan(t)) {
       Serial.println(F("Failed to read from DHT sensor!"));
       return;
     }
 
-    // Send temperature and humidity data to Firebase
-    if (Firebase.RTDB.setFloat(&fbdo, "/esp4/cab1/temp", t)) {
-      Serial.print("Temperature: ");
-      Serial.println(t);
-    } else {
-      Serial.println(fbdo.errorReason());
-    }
+    Serial.print("Temperature: ");
+    Serial.print(t);
+    Serial.print(" Humidity: ");
+    Serial.println(h);
 
-    if (Firebase.RTDB.setFloat(&fbdo, "/esp4/cab1/vlazh", h)) {
-      Serial.print("Humidity: ");
-      Serial.println(h);
-    } else {
-      Serial.println(fbdo.errorReason());
-    }
+    // Send temperature and humidity data to Firebase
+    Firebase.RTDB.setFloat(&fbdo, "/esp4/cab1/temp", t);
+    Firebase.RTDB.setFloat(&fbdo, "/esp4/cab1/vlazh", h);
+
+    // Control climate based on current temperature
+    controlClimate(t);
   }
 }
