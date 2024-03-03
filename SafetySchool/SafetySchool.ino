@@ -16,7 +16,7 @@
 #define API_KEY "AIzaSyCI9EJ6dAA-XN8wYl8Y2fiSZNJGX5AEqmM"
 
 // Insert RTDB URL
-#define DATABASE_URL "https://safetyschool-5bb16-default-rtdb.asia-southeast1.firebasedatabase.app" 
+#define DATABASE_URL "https://safetyschool-5bb16-default-rtdb.asia-southeast1.firebasedatabase.app"
 
 // DHT Sensor configuration
 #define DHTPIN 25 // Adjust according to your ESP32 pin layout
@@ -24,8 +24,8 @@
 DHT dht(DHTPIN, DHTTYPE);
 
 // Relay pins
-#define RELAY_PIN_VENTILATION 26 // Change to your ventilation relay pin
-#define RELAY_PIN_HEATER 27 // Change to your heater relay pin
+#define RELAY_PIN_VENTILATION 33 // Change to your ventilation relay pin
+#define RELAY_PIN_HEATER 32 // Change to your heater relay pin
 
 // Define Firebase Data object
 FirebaseData fbdo;
@@ -34,12 +34,14 @@ FirebaseAuth auth;
 FirebaseConfig config;
 
 unsigned long sendDataPrevMillis = 0;
-
+float h = 0;
+float t = 0;
+float maxTemp, minTemp;
 bool signupOK = false;
 
 void setup() {
   Serial.begin(115200);
-  
+
   pinMode(RELAY_PIN_VENTILATION, OUTPUT);
   pinMode(RELAY_PIN_HEATER, OUTPUT);
   // Ensure relays are OFF initially
@@ -47,7 +49,7 @@ void setup() {
   digitalWrite(RELAY_PIN_HEATER, LOW);
 
   dht.begin();
-  
+
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -75,8 +77,33 @@ void setup() {
 }
 
 void controlClimate(float currentTemperature) {
-  float maxTemp, minTemp;
-  if (Firebase.RTDB.getFloat(&fbdo, "/esp4/cab1/maxtemp")) {
+
+  if(currentTemperature != 0){
+    if (currentTemperature > maxTemp) {
+      // Activate ventilation system
+      digitalWrite(RELAY_PIN_VENTILATION, HIGH);
+      digitalWrite(RELAY_PIN_HEATER, LOW);
+      Serial.println("Ventilation ON");
+    } else if (currentTemperature < minTemp) {
+      // Activate both ventilation and heater
+      digitalWrite(RELAY_PIN_VENTILATION, HIGH);
+      digitalWrite(RELAY_PIN_HEATER, HIGH);
+      Serial.println("Heater and Ventilation ON");
+    } else {
+      // Deactivate both systems
+      digitalWrite(RELAY_PIN_VENTILATION, LOW);
+      digitalWrite(RELAY_PIN_HEATER, LOW);
+      Serial.println("Heater and Ventilation OFF");
+    }
+  }
+}
+
+void loop() {
+
+  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
+    sendDataPrevMillis = millis();
+
+      if (Firebase.RTDB.getFloat(&fbdo, "/esp4/cab1/maxtemp")) {
     maxTemp = fbdo.floatData();
   } else {
     Serial.println("Failed to read max temperature threshold");
@@ -90,30 +117,10 @@ void controlClimate(float currentTemperature) {
     return;
   }
 
-  if (currentTemperature > maxTemp) {
-    // Activate ventilation system
-    digitalWrite(RELAY_PIN_VENTILATION, HIGH);
-    Serial.println("Ventilation ON");
-  } else if (currentTemperature < minTemp) {
-    // Activate both ventilation and heater
-    digitalWrite(RELAY_PIN_VENTILATION, HIGH);
-    digitalWrite(RELAY_PIN_HEATER, HIGH);
-    Serial.println("Heater and Ventilation ON");
-  } else {
-    // Deactivate both systems
-    digitalWrite(RELAY_PIN_VENTILATION, LOW);
-    digitalWrite(RELAY_PIN_HEATER, LOW);
-    Serial.println("Heater and Ventilation OFF");
-  }
-}
+    
+    h = dht.readHumidity();
+    t = dht.readTemperature();
 
-void loop() {
-  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
-    sendDataPrevMillis = millis();
-    
-    float h = dht.readHumidity();
-    float t = dht.readTemperature();
-    
     if (isnan(h) || isnan(t)) {
       Serial.println(F("Failed to read from DHT sensor!"));
       return;
@@ -129,6 +136,7 @@ void loop() {
     Firebase.RTDB.setFloat(&fbdo, "/esp4/cab1/vlazh", h);
 
     // Control climate based on current temperature
-    controlClimate(t);
+
   }
+  controlClimate(t);
 }
