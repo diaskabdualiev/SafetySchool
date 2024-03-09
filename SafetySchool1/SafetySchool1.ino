@@ -27,21 +27,29 @@ FirebaseConfig config;
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
 
-const int zharyqPins[15] = {32, 33, 25, 26, 27, 14, 13, 23, 22, 21, 19, 18, 17, 16, 4};
+const int zharyqPins[15] = {32, 23, 22, 16, 4, 14, 13, 33, 25, 21, 19, 18, 17, 26, 27};
 
+unsigned long previous_time = 0;
+unsigned long delay1 = 30000;  // 30 seconds delay
 
 void setup() {
   Serial.begin(115200);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(300);
-  }
+
   for (int i = 0; i < 15; i++) {
     pinMode(zharyqPins[i], OUTPUT);
     digitalWrite(zharyqPins[i], LOW);
   }
+  
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    digitalWrite(zharyqPins[0], HIGH);
+    delay(300);
+    digitalWrite(zharyqPins[0], LOW);
+    delay(400);
+  }
+  digitalWrite(zharyqPins[0], HIGH);
   Serial.println();
   Serial.print("Connected with IP: ");
   Serial.println(WiFi.localIP());
@@ -138,5 +146,13 @@ void loop() {
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
 
+  }
+    unsigned long current_time = millis();
+  if ((WiFi.status() != WL_CONNECTED) && (current_time - previous_time >= delay1)) {
+    Serial.print(millis());
+    Serial.println("Reconnecting to WIFI network");
+    WiFi.disconnect();
+    WiFi.reconnect();
+    previous_time = current_time;
   }
 }

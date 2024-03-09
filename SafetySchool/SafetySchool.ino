@@ -39,6 +39,9 @@ float t = 0;
 float maxTemp, minTemp;
 bool signupOK = false;
 
+unsigned long previous_time = 0;
+unsigned long delay1 = 30000;  // 30 seconds delay
+
 void setup() {
   Serial.begin(115200);
 
@@ -139,4 +142,12 @@ void loop() {
 
   }
   controlClimate(t);
+  unsigned long current_time = millis();
+  if ((WiFi.status() != WL_CONNECTED) && (current_time - previous_time >= delay1)) {
+    Serial.print(millis());
+    Serial.println("Reconnecting to WIFI network");
+    WiFi.disconnect();
+    WiFi.reconnect();
+    previous_time = current_time;
+  }
 }
