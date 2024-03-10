@@ -27,7 +27,7 @@ FirebaseConfig config;
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
 
-const int zharyqPins[15] = {32, 23, 22, 16, 4, 14, 13, 33, 25, 21, 19, 18, 17, 26, 27};
+const int zharyqPins[15] = {32, 23, 22, 16, 4, 33, 25, 27, 14, 26, 19, 21, 13, 18 , 17};
 
 unsigned long previous_time = 0;
 unsigned long delay1 = 30000;  // 30 seconds delay
@@ -49,7 +49,7 @@ void setup() {
     digitalWrite(zharyqPins[0], LOW);
     delay(400);
   }
-  digitalWrite(zharyqPins[0], HIGH);
+  digitalWrite(zharyqPins[0], LOW );
   Serial.println();
   Serial.print("Connected with IP: ");
   Serial.println(WiFi.localIP());

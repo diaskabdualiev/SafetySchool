@@ -2,6 +2,11 @@
 #include <WiFi.h>
 #include <Firebase_ESP_Client.h>
 #include "DFRobotDFPlayerMini.h"
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
+
+Adafruit_MPU6050 mpu;
 
 #if (defined(ARDUINO_AVR_UNO) || defined(ESP8266))   // Using a soft serial port
 #include <SoftwareSerial.h>
@@ -35,7 +40,7 @@ FirebaseConfig config;
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
 int selectVal = 0;
-
+int alarm = 0;
 DFRobotDFPlayerMini myDFPlayer;
 void printDetail(uint8_t type, int value);
 
@@ -76,7 +81,23 @@ void setup() {
   myDFPlayer.volumeDown(); //Volume Down
   myDFPlayer.EQ(DFPLAYER_EQ_NORMAL);
   
+    Serial.println("Adafruit MPU6050 test!");
 
+  // Try to initialize!
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
+      delay(10);
+    }
+  }
+  Serial.println("MPU6050 Found!");
+  mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
+  mpu.setMotionDetectionThreshold(1);
+  mpu.setMotionDetectionDuration(5);
+  mpu.setInterruptPinLatch(true);  // Keep it latched.  Will turn off when reinitialized.
+  mpu.setInterruptPinPolarity(true);
+  mpu.setMotionInterrupt(true);
+  
   config.api_key = API_KEY;
   config.database_url = DATABASE_URL;
 
@@ -131,6 +152,10 @@ void streamCallback(FirebaseStream data)
       Serial.print("Played music: ");
       Serial.println(selectVal);
     }
+  }else if(data.dataPath().endsWith("/alarm")){
+    alarm = data.intData();
+    Serial.print("Alarm status: ");
+    Serial.println(selectVal);
   }
 
   // Выводим значение
@@ -140,7 +165,12 @@ void loop() {
 
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
-    
+    if(mpu.getMotionInterruptStatus()&& alarm) {
+    /* Get new sensor events with the readings */
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    myDFPlayer.play(4);
+    }
   }
     if (myDFPlayer.available()) {
     printDetail(myDFPlayer.readType(), myDFPlayer.read()); //Print the detail message from DFPlayer to handle different errors and states.
