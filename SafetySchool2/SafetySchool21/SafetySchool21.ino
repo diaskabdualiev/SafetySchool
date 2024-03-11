@@ -40,7 +40,7 @@ FirebaseConfig config;
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
 int selectVal = 0;
-int alarm = 0;
+int alarm1 = 0;
 DFRobotDFPlayerMini myDFPlayer;
 void printDetail(uint8_t type, int value);
 
@@ -93,7 +93,7 @@ void setup() {
   Serial.println("MPU6050 Found!");
   mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
   mpu.setMotionDetectionThreshold(1);
-  mpu.setMotionDetectionDuration(5);
+  mpu.setMotionDetectionDuration(20);
   mpu.setInterruptPinLatch(true);  // Keep it latched.  Will turn off when reinitialized.
   mpu.setInterruptPinPolarity(true);
   mpu.setMotionInterrupt(true);
@@ -153,7 +153,7 @@ void streamCallback(FirebaseStream data)
       Serial.println(selectVal);
     }
   }else if(data.dataPath().endsWith("/alarm")){
-    alarm = data.intData();
+    alarm1 = data.intData();
     Serial.print("Alarm status: ");
     Serial.println(selectVal);
   }
@@ -163,13 +163,14 @@ void streamCallback(FirebaseStream data)
 }
 void loop() {
 
-  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
-    sendDataPrevMillis = millis();
-    if(mpu.getMotionInterruptStatus()&& alarm) {
-    /* Get new sensor events with the readings */
-    sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
-    myDFPlayer.play(4);
+  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 5000 || sendDataPrevMillis == 0)) {
+    
+    if(mpu.getMotionInterruptStatus()&& alarm1) {
+      sendDataPrevMillis = millis();
+      /* Get new sensor events with the readings */
+      sensors_event_t a, g, temp;
+      mpu.getEvent(&a, &g, &temp);
+      myDFPlayer.play(4);
     }
   }
     if (myDFPlayer.available()) {
