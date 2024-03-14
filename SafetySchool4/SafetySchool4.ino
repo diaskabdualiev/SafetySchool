@@ -30,6 +30,19 @@ bool signupOK = false;
 unsigned long previous_time = 0;
 unsigned long delay1 = 30000;  // 30 seconds delay
 
+#include <Arduino.h>
+#include "MHZ19.h"                                        
+#include <SoftwareSerial.h>                                // Remove if using HardwareSerial
+
+#define RX_PIN 16                                          // Rx pin which the MHZ19 Tx pin is attached to
+#define TX_PIN 17                                          // Tx pin which the MHZ19 Rx pin is attached to
+#define BAUDRATE 9600                                      // Device to MH-Z19 Serial baudrate (should not be changed)
+
+MHZ19 myMHZ19;                                             // Constructor for library
+SoftwareSerial mySerial(RX_PIN, TX_PIN);                   // (Uno example) create device to MH-Z19 serial
+
+unsigned long getDataTimer = 0;
+
 void setup() {
   Serial.begin(115200);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -39,7 +52,7 @@ void setup() {
 //    digitalWrite(zharyqPins[0], HIGH);
 //    delay(300);
 //    digitalWrite(zharyqPins[0], LOW);
-//    delay(400);
+    delay(400);n 
   }
   Serial.println();
   Serial.print("Connected with IP: ");
@@ -62,8 +75,12 @@ void setup() {
   
   if (!Firebase.RTDB.beginStream(&stream, "/esp1"))
     Serial.printf("stream begin error, %s\n\n", stream.errorReason().c_str());
-  Firebase.RTDB.setStreamCallback(&stream, streamCallback, streamTimeoutCallback);
+  Firebase.RTDB.setStreamCallback(&stream, streamCallback, streamTimeoutCallback);                                    // Device to serial monitor feedback
 
+  mySerial.begin(BAUDRATE);                               // (Uno example) device to MH-Z19 serial start   
+  myMHZ19.begin(mySerial);                                // *Serial(Stream) refence must be passed to library begin(). 
+
+  myMHZ19.autoCalibration();                              // Turn auto calibration ON (OFF autoCalibration(false))
 }
 
 
@@ -83,12 +100,6 @@ void streamCallback(FirebaseStream data)
   Serial.println(data.dataType());
 
   // Обработка для zharyq1 до zharyq15
-  if (data.dataPath().endsWith("/door")) {
-    myservo.write(data.intData() != 0 ? 90 : 0);
-//    digitalWrite(zharyqPins[0], data.intData() != 0 ? HIGH : LOW);
-    Serial.print("/servo door: ");
-    Serial.println(data.intData());
-  }
   // Выводим значение
   Serial.println(data.intData());
 }
@@ -96,6 +107,35 @@ void loop() {
 
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
+    int CO2; 
+
+    /* note: getCO2() default is command "CO2 Unlimited". This returns the correct CO2 reading even 
+    if below background CO2 levels or above range (useful to validate sensor). You can use the 
+    usual documented command with getCO2(false) */
+
+    CO2 = myMHZ19.getCO2();                             // Request CO2 (as ppm)
+    
+    Serial.print("CO2 (ppm): ");                      
+    Serial.println(CO2);                                
+
+    int8_t Temp;
+    Temp = myMHZ19.getTemperature();                     // Request Temperature (as Celsius)
+    Serial.print("Temperature (C): ");                  
+    Serial.println(Temp);   
+    if (Firebase.RTDB.setInt(&fbdo, F("/esp5/ppm"), CO2)) {
+      if (fbdo.dataTypeEnum() == firebase_rtdb_data_type_integer) {
+        Serial.println(fbdo.to<int>());
+      }
+    } else {
+      Serial.println(fbdo.errorReason());
+    }
+    if (Firebase.RTDB.setInt(&fbdo, F("/esp5/temp"), Temp)) {
+      if (fbdo.dataTypeEnum() == firebase_rtdb_data_type_integer) {
+        Serial.println(fbdo.to<int>());
+      }
+    } else {
+      Serial.println(fbdo.errorReason());
+    }
   }
     unsigned long current_time = millis();
   if ((WiFi.status() != WL_CONNECTED) && (current_time - previous_time >= delay1)) {
