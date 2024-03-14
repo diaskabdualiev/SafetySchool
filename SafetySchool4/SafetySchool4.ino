@@ -34,8 +34,8 @@ unsigned long delay1 = 30000;  // 30 seconds delay
 #include "MHZ19.h"                                        
 #include <SoftwareSerial.h>                                // Remove if using HardwareSerial
 
-#define RX_PIN 16                                          // Rx pin which the MHZ19 Tx pin is attached to
-#define TX_PIN 17                                          // Tx pin which the MHZ19 Rx pin is attached to
+#define RX_PIN 33                                          // Rx pin which the MHZ19 Tx pin is attached to
+#define TX_PIN 32                                          // Tx pin which the MHZ19 Rx pin is attached to
 #define BAUDRATE 9600                                      // Device to MH-Z19 Serial baudrate (should not be changed)
 
 MHZ19 myMHZ19;                                             // Constructor for library
@@ -52,7 +52,7 @@ void setup() {
 //    digitalWrite(zharyqPins[0], HIGH);
 //    delay(300);
 //    digitalWrite(zharyqPins[0], LOW);
-    delay(400);n 
+    delay(400);
   }
   Serial.println();
   Serial.print("Connected with IP: ");
@@ -105,7 +105,7 @@ void streamCallback(FirebaseStream data)
 }
 void loop() {
 
-  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 2000 || sendDataPrevMillis == 0)) {
+  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 60000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
     int CO2; 
 
