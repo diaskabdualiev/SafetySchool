@@ -42,6 +42,8 @@ bool signupOK = false;
 unsigned long previous_time = 0;
 unsigned long delay1 = 30000;  // 30 seconds delay
 
+unsigned long previostime = 0;
+
 void setup() {
   Serial.begin(115200);
 
@@ -84,13 +86,13 @@ void controlClimate(float currentTemperature) {
   if(currentTemperature != 0){
     if (currentTemperature >= maxTemp) {
       // Activate ventilation system
-      digitalWrite(RELAY_PIN_VENTILATION, HIGH);
-      digitalWrite(RELAY_PIN_HEATER, LOW);
+      digitalWrite(RELAY_PIN_VENTILATION, LOW);
+      digitalWrite(RELAY_PIN_HEATER, HIGH);
       Serial.println("Ventilation ON");
     } else if (currentTemperature <= minTemp) {
       // Activate both ventilation and heater
       digitalWrite(RELAY_PIN_VENTILATION, HIGH);
-      digitalWrite(RELAY_PIN_HEATER, HIGH);
+      digitalWrite(RELAY_PIN_HEATER, LOW);
       Serial.println("Heater and Ventilation ON");
     } else {
       // Deactivate both systems
@@ -121,18 +123,7 @@ void loop() {
   }
 
     
-    h = dht.readHumidity();
-    t = dht.readTemperature();
-
-    if (isnan(h) || isnan(t)) {
-      Serial.println(F("Failed to read from DHT sensor!"));
-      return;
-    }
-
-    Serial.print("Temperature: ");
-    Serial.print(t);
-    Serial.print(" Humidity: ");
-    Serial.println(h);
+   
 
     // Send temperature and humidity data to Firebase
     Firebase.RTDB.setFloat(&fbdo, "/esp4/cab1/temp", t);
@@ -141,7 +132,25 @@ void loop() {
     // Control climate based on current temperature
 
   }
-  controlClimate(t);
+
+
+  if(millis() - previostime >= 2000){
+    h = dht.readHumidity();
+    t = dht.readTemperature();
+  
+    if (isnan(h) || isnan(t)) {
+      Serial.println(F("Failed to read from DHT sensor!"));
+      return;
+    }
+  
+    Serial.print("Temperature: ");
+    Serial.print(t);
+    Serial.print(" Humidity: ");
+    Serial.println(h);
+    controlClimate(t);
+    previostime = millis();
+  }
+  
   unsigned long current_time = millis();
   if ((WiFi.status() != WL_CONNECTED) && (current_time - previous_time >= delay1)) {
     Serial.print(millis());
