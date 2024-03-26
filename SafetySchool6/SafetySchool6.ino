@@ -43,6 +43,23 @@ unsigned long delay1 = 30000;  // 30 seconds delay
 
 unsigned long previostime = 0;
 
+
+#include <ESP32Servo.h>
+
+Servo myservo;  // Создаем объект сервопривода
+
+const int trigPin = 14;
+const int echoPin = 27;
+const int servoPin = 13;
+
+long duration;
+int distance;
+const int openPosition = 0;   // Угол открытия сервопривода
+const int closePosition = 90; // Угол закрытия сервопривода
+unsigned long previousMillis = 0; 
+const long interval = 5000;   // Интервал времени для автоматического закрытия (5 секунд)
+
+
 void setup() {
   Serial.begin(115200);
 
@@ -81,6 +98,12 @@ void setup() {
 
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+
+  myservo.attach(servoPin);  // Подключаем сервопривод к указанному пину
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  Serial.begin(115200);      // Начинаем серийную связь на скорости 115200 бод
+  myservo.write(closePosition); // Закрываем мусорку при запуске
 }
 
 void controlClimate(float currentTemperature) {
@@ -143,7 +166,35 @@ void loop() {
     Firebase.RTDB.setFloat(&fbdo, "/esp7/datchikPochvy", sensorValue);
     controlClimate(sensorValue);
   }
+    unsigned long currentMillis = millis();
 
+  // Отправляем импульс
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  
+  // Читаем длительность эхо-сигнала
+  duration = pulseIn(echoPin, HIGH);
+  
+  // Рассчитываем расстояние
+  distance = duration * 0.034 / 2;
+  
+  // Проверяем, находится ли что-то в пределах 10 см
+  if (distance <= 10) {
+    // Если да, открываем мусорку
+    myservo.write(openPosition);
+    previousMillis = currentMillis;  // Сброс таймера
+  } else if (currentMillis - previousMillis >= interval) {
+    // Если прошло более 5 секунд с момента последнего открытия, закрываем мусорку
+    myservo.write(closePosition);
+  }
+
+  // Выводим расстояние для отладки
+  Serial.print("Distance: ");
+  Serial.println(distance);
+  
   unsigned long current_time = millis();
   if ((WiFi.status() != WL_CONNECTED) && (current_time - previous_time >= delay1)) {
     Serial.print(millis());
