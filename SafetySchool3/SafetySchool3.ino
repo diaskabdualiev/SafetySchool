@@ -13,10 +13,10 @@
 #define WIFI_PASSWORD "SafetySchool"
 
 // Insert Firebase project API Key
-#define API_KEY "AIzaSyCI9EJ6dAA-XN8wYl8Y2fiSZNJGX5AEqmM"
+#define API_KEY "AIzaSyBPRfGaCYhNKFMcwKBCFtI4TLM9csQ_8Ds"
 
 // Insert RTDB URL
-#define DATABASE_URL "https://safetyschool-5bb16-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define DATABASE_URL "https://safetyschool-19925-default-rtdb.asia-southeast1.firebasedatabase.app"
 
 
 // Define Firebase Data object
@@ -32,8 +32,10 @@ unsigned long previous_time = 0;
 unsigned long delay1 = 30000;  // 30 seconds delay
 
 Servo myservo;  // создаем объект сервопривода
-int servoPin = 32; // GPIO пин к которому подключен сервопривод
+Servo myservo1;  // создаем объект сервопривода
 
+int servoPin = 32; // GPIO пин к которому подключен сервопривод
+int servoPin1 = 33; // GPIO пин к которому подключен сервопривод
 void setup() {
   Serial.begin(115200);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -70,6 +72,9 @@ void setup() {
 
   myservo.attach(servoPin);  // ассоциируем сервопривод с пином
   myservo.write(0); // Инициализируем сервопривод в исходном положении (0 градусов)
+  myservo1.attach(servoPin1);  // ассоциируем сервопривод с пином
+  myservo1.write(0); // Инициализируем сервопривод в исходном положении (0 градусов)
+  
 }
 
 
@@ -93,6 +98,12 @@ void streamCallback(FirebaseStream data)
     myservo.write(data.intData() != 0 ? 90 : 0);
 //    digitalWrite(zharyqPins[0], data.intData() != 0 ? HIGH : LOW);
     Serial.print("/servo door: ");
+    Serial.println(data.intData());
+  }
+  if (data.dataPath().endsWith("/door1")) {
+    myservo1.write(data.intData() != 0 ? 90 : 0);
+//    digitalWrite(zharyqPins[0], data.intData() != 0 ? HIGH : LOW);
+    Serial.print("/servo1 door: ");
     Serial.println(data.intData());
   }
   // Выводим значение
