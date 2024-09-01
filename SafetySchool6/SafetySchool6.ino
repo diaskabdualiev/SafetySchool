@@ -54,8 +54,8 @@ const int servoPin = 13;
 
 long duration;
 int distance;
-const int openPosition = 0;   // Угол открытия сервопривода
-const int closePosition = 90; // Угол закрытия сервопривода
+const int openPosition = 100;   // Угол открытия сервопривода
+const int closePosition = 0; // Угол закрытия сервопривода
 unsigned long previousMillis = 0; 
 const long interval = 5000;   // Интервал времени для автоматического закрытия (5 секунд)
 
