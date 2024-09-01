@@ -13,10 +13,10 @@
 #define WIFI_PASSWORD "SafetySchool"
 
 // Insert Firebase project API Key
-#define API_KEY "AIzaSyCI9EJ6dAA-XN8wYl8Y2fiSZNJGX5AEqmM"
+#define API_KEY "AIzaSyBPRfGaCYhNKFMcwKBCFtI4TLM9csQ_8Ds"
 
 // Insert RTDB URL
-#define DATABASE_URL "https://safetyschool-5bb16-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define DATABASE_URL "https://safetyschool-19925-default-rtdb.asia-southeast1.firebasedatabase.app"
 
 // DHT Sensor configuration
 #define DHTPIN 25 // Adjust according to your ESP32 pin layout
@@ -24,8 +24,8 @@
 DHT dht(DHTPIN, DHTTYPE);
 
 // Relay pins
-#define RELAY_PIN_VENTILATION 33 // Change to your ventilation relay pin
-#define RELAY_PIN_HEATER 32 // Change to your heater relay pin
+#define RELAY_PIN_VENTILATION 32 // Change to your ventilation relay pin
+#define RELAY_PIN_HEATER 33 // Change to your heater relay pin
 
 // Define Firebase Data object
 FirebaseData fbdo;
