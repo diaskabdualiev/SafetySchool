@@ -12,10 +12,10 @@
 #define WIFI_PASSWORD "SafetySchool"
 
 // Insert Firebase project API Key
-#define API_KEY "AIzaSyCI9EJ6dAA-XN8wYl8Y2fiSZNJGX5AEqmM"
+#define API_KEY "AIzaSyBPRfGaCYhNKFMcwKBCFtI4TLM9csQ_8Ds"
 
 // Insert RTDB URL
-#define DATABASE_URL "https://safetyschool-5bb16-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define DATABASE_URL "https://safetyschool-19925-default-rtdb.asia-southeast1.firebasedatabase.app"
 
 
 // Define Firebase Data object
@@ -27,7 +27,7 @@ FirebaseConfig config;
 unsigned long sendDataPrevMillis = 0;
 bool signupOK = false;
 
-const int zharyqPins[15] = {32, 23, 22, 16, 4, 33, 25, 27, 14, 26, 19, 21, 13, 18 , 17};
+const int zharyqPins[15] = {32, 23, 22, 16, 4, 33, 25, 27, 14, 26, 18, 13, 19, 21 , 17};
 
 unsigned long previous_time = 0;
 unsigned long delay1 = 30000;  // 30 seconds delay
